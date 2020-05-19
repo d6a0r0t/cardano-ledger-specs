@@ -44,6 +44,8 @@ import qualified Test.Tasty as T
 import qualified Test.Tasty.HUnit as T
 import qualified Test.Tasty.Hedgehog as T
 
+import qualified Test.Cardano.Chain.Common.Gen as Byron
+
 addressTests :: TestTree
 addressTests = T.testGroup "Address golden tests" [goldenTests, testsWithOtherCrypto, roundTripTests]
 
@@ -232,7 +234,10 @@ putGet name gen put get = T.testProperty (name <> "_bytes") $ H.property $ do
       Right (_, _, result) -> Just result
 
 genAddr :: Gen C.Addr
-genAddr = Addr <$> genCredential <*> genStakeReference
+genAddr = H.frequency
+  [ (5,Addr <$> genCredential <*> genStakeReference)
+  , (1, AddrBootstrap <$> Byron.genAddress)
+  ]
   where
     genCredential = H.choice [genKeyHash, genScriptHash]
     genStakeReference =
